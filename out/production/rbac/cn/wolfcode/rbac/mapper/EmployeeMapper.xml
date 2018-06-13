@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="cn.wolfcode.rbac.mapper.EmployeeMapper">
+  	<resultMap type="Employee" id="BaseMapper">
+  		<id column="id" property="id"/>
+  		<result column="name" property="name"/>
+  		<result column="password" property="password"/>
+  		<result column="email" property="email"/>
+  		<result column="age" property="age"/>
+  		<result column="admin" property="admin"/>
+  		<association property="dept" javaType="Department">
+  			<id column="d_id" property="id"/>
+  			<result column="d_name" property="name"/>
+  			<result column="d_sn" property="sn"/>
+  		</association>
+  	</resultMap>
+  	
+  	<resultMap type="Employee" id="SingleMapper">
+  		<id column="id" property="id"/>
+  		<result column="name" property="name"/>
+  		<result column="password" property="password"/>
+  		<result column="email" property="email"/>
+  		<result column="age" property="age"/>
+  		<result column="admin" property="admin"/>
+  		<association property="dept" column="dept_id" javaType="Department"
+  			select="cn.wolfcode.rbac.mapper.DepartmentMapper.get"
+  		>
+  		</association>
+  	</resultMap>
+  	
+  	
+  	<insert id="save" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+  		insert into employee(name,password,email,age,admin,dept_id)
+  		values(#{name},#{password},#{email},#{age},#{admin},#{dept.id})
+  	</insert>
+  	<update id="update">
+  		update employee
+  		<trim prefix="set" suffixOverrides=",">
+  			<if test="name != null and name !=''">
+  				name=#{name},
+  			</if>
+  			<if test="password != null and password !=''">
+  				password=#{password},
+  			</if>
+  			<if test="email != null and email !=''">
+  				email=#{email},
+  			</if>
+  			<if test="age != null and age !=''">
+  				age=#{age},
+  			</if>
+  			<if test="admin > 0">
+  				admin=#{admin},
+  			</if>
+  		</trim>
+  		where id = #{id}
+  	</update>
+  	<delete id="delete">
+  		delete from employee where id = #{id}
+  	</delete>
+  	<select id="get" resultMap="SingleMapper">
+  		select id,name,password,email,age,admin,dept_id from employee e where
+  		id = #{id}
+  	</select>
+  	<select id="list" resultMap="BaseMapper">
+  		select e.id,e.name,e.password,e.email,e.age,e.admin,e.dept_id, d.id d_id,d.name d_name,d.sn d_sn
+  	    from employee e left join department d on e.dept_id = d.id
+  	</select>
+  	
+  	<sql id="where_id">
+  		<where>
+  			<if test="keyword != null and keyword != ''">
+  				and (
+		  		(e.name like concat('%',#{keyword},'%') or e.email like concat('%',#{keyword},'%') )
+		  		)
+  			</if>
+  			<if test="deptId > 0">
+  				and e.dept_id = #{deptId}
+  			</if>
+  		</where>
+  	</sql>
+  		<select id="queryForList" resultMap="BaseMapper">
+  		select e.id,e.name,e.password,e.email,e.age,e.admin,e.dept_id, d.id d_id,d.name d_name,d.sn d_sn
+  	    from employee e left join department d on e.dept_id = d.id
+  		<include refid="where_id"/>
+  		limit #{startIndex},#{pageSize}
+  	</select>
+  	<select id="queryForCount" resultType="int">
+  		select count(e.id) from employee e
+  		<include refid="where_id"/>
+  	</select>
+  
+  </mapper>
